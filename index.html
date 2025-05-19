@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>俳句コンテスト 投票</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --text:#121212;
+  --gray:#8a8a8a;
+  --line:#dcdcdc;
+  --accent:#000;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Inter','Noto Sans JP',sans-serif;
+  color:var(--text);background:#fafafa;
+  display:flex;align-items:flex-start;justify-content:center;
+  min-height:100vh;padding:6vh 4vw;
+}
+form{width:100%;max-width:460px;}
+h1{
+  font-size:1.35rem;font-weight:600;letter-spacing:.04em;
+  margin-bottom:2.2rem;
+}
+.field{position:relative;margin-bottom:1.9rem;}
+input,textarea{
+  width:100%;border:none;border-bottom:1.5px solid var(--line);
+  background:#fff;font-size:1rem;padding:.95rem .2rem .65rem .2rem;
+  color:var(--text);transition:border-color .2s;
+  resize:vertical;
+}
+textarea{min-height:44px}
+input:focus,textarea:focus{outline:none;border-color:var(--accent);}
+label{
+  position:absolute;left:.2rem;top:1rem;
+  font-size:.96rem;color:var(--gray);pointer-events:none;
+  transition:all .18s;
+}
+input:focus+label,
+textarea:focus+label,
+input:not(:placeholder-shown)+label,
+textarea:not(:placeholder-shown)+label{
+  top:-.65rem;font-size:.75rem;color:var(--accent);
+}
+button{
+  width:100%;margin-top:1.4rem;
+  padding:1rem 0;border:none;border:1.5px solid var(--accent);
+  background:var(--accent);color:#fff;font-size:1.05rem;font-weight:600;
+  letter-spacing:.05em;border-radius:4px;cursor:pointer;
+  transition:background .2s,color .2s;
+}
+button:hover{background:#fff;color:var(--accent);}
+.error{
+  margin-top:-1rem;margin-bottom:1.2rem;font-size:.9rem;
+  color:#d23a3a;display:none;font-weight:500;
+}
+.thanks{text-align:center;font-size:1.1rem;font-weight:500;}
+.summary{margin-top:1rem;font-size:.92rem;line-height:1.6em;color:var(--gray);}
+@media(max-width:550px){h1{font-size:1.2rem}}
+</style>
+</head>
+<body>
+<form id="voteForm" autocomplete="off">
+  <h1>俳句コンテスト 投票フォーム</h1>
+
+  <div class="field">
+    <input type="text" id="classroom" name="classroom" required placeholder=" "/>
+    <label for="classroom">クラス（例 1年A組）</label>
+  </div>
+
+  <div class="field">
+    <input type="text" id="username" name="username" required placeholder=" "/>
+    <label for="username">お名前（ニックネーム可）</label>
+  </div>
+
+  <div class="field">
+    <input type="number" id="haiku1" name="haiku1" min="1" required placeholder=" "/>
+    <label for="haiku1">1 位 俳句番号</label>
+  </div>
+
+  <div class="field">
+    <input type="number" id="haiku2" name="haiku2" min="1" required placeholder=" "/>
+    <label for="haiku2">2 位 俳句番号</label>
+  </div>
+
+  <div class="field">
+    <input type="number" id="haiku3" name="haiku3" min="1" required placeholder=" "/>
+    <label for="haiku3">3 位 俳句番号</label>
+  </div>
+
+  <div class="field">
+    <textarea id="comment1" name="comment1" required placeholder=" "></textarea>
+    <label for="comment1">1 位 コメント</label>
+  </div>
+
+  <div class="field">
+    <textarea id="comment2" name="comment2" required placeholder=" "></textarea>
+    <label for="comment2">2 位 コメント</label>
+  </div>
+
+  <div class="field">
+    <textarea id="comment3" name="comment3" required placeholder=" "></textarea>
+    <label for="comment3">3 位 コメント</label>
+  </div>
+
+  <div class="error" id="errMsg"></div>
+  <button type="submit">投票する</button>
+
+  <div class="thanks" id="thanksMsg" style="display:none;">
+    投票ありがとうございました！
+    <div class="summary" id="summary"></div>
+  </div>
+</form>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbz8F7Rhp0ZRZqZLfF5M5DJ6zeUdeE7axZ_FAMSBhXQNeIzxIiDIrKUWdWQu0oUIkuX-/exec";
+
+document.getElementById("voteForm").onsubmit = async e=>{
+  e.preventDefault();
+  const f = e.target;
+  const val = id=>f[id].value.trim();
+  const data = {
+    classroom:val("classroom"),
+    username :val("username"),
+    haiku1   :val("haiku1"), comment1:val("comment1"),
+    haiku2   :val("haiku2"), comment2:val("comment2"),
+    haiku3   :val("haiku3"), comment3:val("comment3")
+  };
+  const err = document.getElementById("errMsg");
+  if(new Set([data.haiku1,data.haiku2,data.haiku3]).size!==3){
+    err.textContent="同じ俳句番号を重複して選べません"; err.style.display="block"; return;
+  }
+  err.style.display="none";
+  try{
+    const r = await fetch(API_URL,{method:"POST",body:JSON.stringify(data),headers:{'Content-Type':'application/json'}});
+    if(!r.ok) throw new Error();
+    f.style.display="none";
+    document.getElementById("thanksMsg").style.display="block";
+    document.getElementById("summary").innerHTML=
+      `<b>${data.classroom}</b> / ${data.username}<br>
+       1位 ${data.haiku1}：${data.comment1}<br>
+       2位 ${data.haiku2}：${data.comment2}<br>
+       3位 ${data.haiku3}：${data.comment3}`;
+  }catch{
+    err.textContent="送信に失敗しました。再度お試しください。"; err.style.display="block";
+  }
+};
+</script>
+</body>
+</html>
